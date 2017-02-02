@@ -30,14 +30,16 @@ public class DriveForwardCommand extends Command {
             e.printStackTrace();
         }
 	    // give it one rotation to run 
-	    Robot.driveTrainSubsystem.driveInDistance(Math.PI*6);
+	    // Robot.driveTrainSubsystem.driveInDistance(Math.PI*6);
 	}
 
 	// Called repeatedly when this Command is scheduled to run
 	@Override
 	protected void execute() {
 	    // for motor safety -- need to update 'set' with target vs. current position
-	}
+	    // @TODO validate IF our positions are absolute, meaning we can repeatedly call 'set()'
+        Robot.driveTrainSubsystem.driveInDistance(Math.PI*6);
+    }
 
 	// Make this return true when this Command no longer needs to run execute()
 	@Override
