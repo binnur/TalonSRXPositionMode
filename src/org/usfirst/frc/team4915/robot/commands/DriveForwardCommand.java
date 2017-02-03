@@ -1,6 +1,8 @@
 package org.usfirst.frc.team4915.robot.commands;
 
 import edu.wpi.first.wpilibj.command.Command;
+
+import org.usfirst.frc.team4915.robot.Logger;
 import org.usfirst.frc.team4915.robot.Robot;
 
 /**
@@ -9,6 +11,8 @@ import org.usfirst.frc.team4915.robot.Robot;
 public class DriveForwardCommand extends Command {
     private int m_withinAllowableClosedLoopErrorCount;
     private static final int FINISH_COUNT_THRESHOLD = 10;
+    
+    private Logger m_logger = new Logger("DriveForwardCommand", Logger.Level.DEBUG);
     
 	public DriveForwardCommand() {
 		// Use requires() here to declare subsystem dependencies
@@ -31,6 +35,9 @@ public class DriveForwardCommand extends Command {
         }
 	    // give it one rotation to run 
 	    // Robot.driveTrainSubsystem.driveInDistance(Math.PI*6);
+	    
+	    m_logger.info("isPositionReset: " + Robot.driveTrainSubsystem.isPositionReset());
+	    m_logger.info("Initialized");
 	}
 
 	// Called repeatedly when this Command is scheduled to run
@@ -38,7 +45,7 @@ public class DriveForwardCommand extends Command {
 	protected void execute() {
 	    // for motor safety -- need to update 'set' with target vs. current position
 	    // @TODO validate IF our positions are absolute, meaning we can repeatedly call 'set()'
-        Robot.driveTrainSubsystem.driveInDistance(Math.PI*6);
+        Robot.driveTrainSubsystem.driveInDistance(18 * 12);
     }
 
 	// Make this return true when this Command no longer needs to run execute()
@@ -47,6 +54,8 @@ public class DriveForwardCommand extends Command {
 	    if (Robot.driveTrainSubsystem.withinAllowableClosedLoopError())
 	    {
 	        m_withinAllowableClosedLoopErrorCount++;
+	        m_logger.info("withinClosedLoopErrorCount: " + m_withinAllowableClosedLoopErrorCount);
+	        return true; // Trying halting the first time
 	    }
 	    else
 	    {
@@ -57,6 +66,7 @@ public class DriveForwardCommand extends Command {
 	    // 200ms to stabilize and return true
 	    if (m_withinAllowableClosedLoopErrorCount > FINISH_COUNT_THRESHOLD)
 	    {
+	    	m_logger.info("isFinished = true");
 	        return true;
 	    }
 		return false;

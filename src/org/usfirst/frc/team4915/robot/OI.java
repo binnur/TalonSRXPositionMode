@@ -14,10 +14,13 @@ import edu.wpi.first.wpilibj.Joystick;
 public class OI {
     // Ports for joysticks
     public static final int DRIVE_STICK_PORT = 0;
+    public static final int AUX_STICK_PORT = 1;
+    
     public final Joystick m_driveStick = new Joystick(DRIVE_STICK_PORT);
+    public final Joystick m_auxStick = new Joystick(AUX_STICK_PORT);
 
     public OI() {
-        JoystickButton m_driveForwardButton = new JoystickButton(m_driveStick, 1);
+        JoystickButton m_driveForwardButton = new JoystickButton(m_auxStick, 8);
         m_driveForwardButton.whenPressed(new DriveForwardCommand());
     }
 }

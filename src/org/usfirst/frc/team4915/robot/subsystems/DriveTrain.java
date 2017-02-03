@@ -8,6 +8,7 @@ import java.util.List;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import org.usfirst.frc.team4915.robot.commands.DriveForwardCommand;
+import org.usfirst.frc.team4915.robot.Logger;
 import org.usfirst.frc.team4915.robot.RobotMap;
 import com.ctre.CANTalon;
 import com.ctre.CANTalon.FeedbackDevice;
@@ -19,6 +20,7 @@ import com.ctre.CANTalon.TalonControlMode;
  */
 public class DriveTrain extends Subsystem {
     private StringBuilder _sb = new StringBuilder();
+    private Logger m_logger = new Logger("Drivetrain", Logger.Level.DEBUG);
     
     /**
      * Encoder is connected directly into the wheel shaft -- 1:1 scaling encoder values
@@ -37,7 +39,7 @@ public class DriveTrain extends Subsystem {
     // Circumference of our wheel
     private static final double WHEEL_CIRCUMFERENCE = (Math.PI*6);
     
-    private static final int ALLOWED_CLOSED_LOOP_ERROR = 28;
+    private static final int ALLOWED_CLOSED_LOOP_ERROR = 50;
     
     // Port motors
     private CANTalon m_portFollowerMotor;
@@ -79,15 +81,17 @@ public class DriveTrain extends Subsystem {
         m_portMasterMotor.setFeedbackDevice(FeedbackDevice.QuadEncoder);
         m_starboardMasterMotor.setFeedbackDevice(FeedbackDevice.QuadEncoder);
 
-        m_portMasterMotor.setInverted(true); // Set direction so that the port motor is *not* inverted
-        m_starboardMasterMotor.setInverted(true); // Set direction so that the starboard motor is *not* inverted
+        m_portMasterMotor.setInverted(false); // Set direction so that the port motor is *not* inverted
+        m_starboardMasterMotor.setInverted(false); // Set direction so that the starboard motor is *not* inverted
         
         /*
          * Typically reverseSensor() is enough to keep sensor in-phase w/ motor
          * reverseOutput() reverses the output of the closed-loop math as an alternative to flip motor direction
          * TalonSRX programming section 7.4
          */
-        m_portMasterMotor.reverseSensor(true);      // @TODO verify that sensor is in-phase w/ the motor
+        m_starboardMasterMotor.reverseOutput(true);
+        
+        m_portMasterMotor.reverseSensor(false);      // @TODO verify that sensor is in-phase w/ the motor
         m_starboardMasterMotor.reverseSensor(true); // @TODO verify that sensor is in-phase w/ the motor
 
         // Set the number of encoder ticks per wheel revolution -- used for unit scaling (rotations & RPM)
@@ -110,8 +114,8 @@ public class DriveTrain extends Subsystem {
          * Proportional Gain = (0.50 x 1023)/1000 = ~0.511 [TalonSRX programming 10.1]
          * IMPORTANT: you can use the roboRIO utility to tune the PID instead of coding it here
          */
-        m_portMasterMotor.setPID(0.51, 0, 0); 
-        m_starboardMasterMotor.setPID(0.51, 0, 0); 
+        m_portMasterMotor.setPID(1.0, 0, 0); 
+        m_starboardMasterMotor.setPID(1.0, 0, 0); 
         
         /*
          *  Set closed loop error
@@ -132,11 +136,11 @@ public class DriveTrain extends Subsystem {
          *      - APIs available to configure forward / reverse nominal output
          *  Note: in native units, these represent -1023 (full reverse; -12V) to +1023 (full forward; 12V)
          */
-        m_portMasterMotor.configNominalOutputVoltage(+0.0f,  -0.0f);
-        m_starboardMasterMotor.configNominalOutputVoltage(+0.0f, -0.0f);
+        m_portMasterMotor.configNominalOutputVoltage(+1.0f,  -1.0f);
+        m_starboardMasterMotor.configNominalOutputVoltage(+1.0f, -1.0f);
         
-        m_portMasterMotor.configPeakOutputVoltage(+12.0f, -12.0f);
-        m_starboardMasterMotor.configPeakOutputVoltage(+12.0f, -12.0f);
+        m_portMasterMotor.configPeakOutputVoltage(+3.0f, -3.0f);
+        m_starboardMasterMotor.configPeakOutputVoltage(+3.0f, -3.0f);
         
         // max allowable voltage change /sec: reach to 12V after .25sec
         m_portMasterMotor.setVoltageRampRate(48.0);
@@ -144,7 +148,7 @@ public class DriveTrain extends Subsystem {
 
         // closed-loop ramp rate
         m_portMasterMotor.setCloseLoopRampRate(48.0);
-        m_starboardMasterMotor.setVoltageRampRate(48.0);
+        m_starboardMasterMotor.setCloseLoopRampRate(48.0);
     }
     
 	public void initDefaultCommand() {
@@ -174,8 +178,20 @@ public class DriveTrain extends Subsystem {
 	 */
 	public void driveInDistance(double distanceInInches)
 	{
-        m_portMasterMotor.set(m_inchesToRotations(distanceInInches));
-        m_starboardMasterMotor.set(m_inchesToRotations(distanceInInches));
+		double rotations = m_inchesToRotations(distanceInInches);
+		double portGet = m_portMasterMotor.get();
+		double starGet = m_starboardMasterMotor.get();
+		double portPosition = m_portMasterMotor.getPosition();
+		double starPosition = m_starboardMasterMotor.getPosition();
+		int portEncPosition = m_portMasterMotor.getEncPosition();
+		int starEncPosition = m_starboardMasterMotor.getEncPosition();
+		
+        m_portMasterMotor.set(rotations);
+        m_starboardMasterMotor.set(rotations);
+        
+        //m_logger.info("Get:\t" + portGet + ", " + starGet);
+        m_logger.info("GetPosition:\t" + portPosition + ", " + starPosition);
+        m_logger.info("GetEncPosition:\t" + portEncPosition + ", " + starEncPosition);
 	}
 	
    public void driveInDistance(double portDistance, double starboardDistance)
@@ -186,14 +202,17 @@ public class DriveTrain extends Subsystem {
 
    public void stop()
    {
-       m_portMasterMotor.set(0.0);
-       m_starboardMasterMotor.set(0.0);
+       //m_portMasterMotor.set(0.0);
+       //m_starboardMasterMotor.set(0.0);
    }
    
    public boolean withinAllowableClosedLoopError()
    {
-       if ((m_portMasterMotor.getClosedLoopError() <= ALLOWED_CLOSED_LOOP_ERROR) &&
-               (m_starboardMasterMotor.getClosedLoopError() <= ALLOWED_CLOSED_LOOP_ERROR))
+	   int portError = m_portMasterMotor.getClosedLoopError();
+	   int starError = m_starboardMasterMotor.getClosedLoopError();
+	   m_logger.info("EncError: " + portError + ", " + starError);
+	   
+       if ((portError <= ALLOWED_CLOSED_LOOP_ERROR) && (starError <= ALLOWED_CLOSED_LOOP_ERROR))
        {
            return true;
        }

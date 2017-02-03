@@ -38,7 +38,7 @@ public class Robot extends IterativeRobot {
 		oi = new OI();
 		
 		chooser.addDefault("Default Auto", new DriveForwardCommand());
-		SmartDashboard.putData("Auto mode", chooser);
+		//SmartDashboard.putData("Auto mode", chooser);
 	}
 
 	/**
@@ -111,7 +111,7 @@ public class Robot extends IterativeRobot {
         if(++_loops >= 10 || _loops > 9) 
         {
             _loops = 0;
-            driveTrainSubsystem.smartDashboardDebugDisplay();          
+            //driveTrainSubsystem.smartDashboardDebugDisplay();          
         }
 	}
 
